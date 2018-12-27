@@ -1,17 +1,14 @@
 package main
 
 import (
-    "fmt"
     "io/ioutil"
     "log"
     "text/scanner"
     "strconv"
     "strings"
-    // "unicode/utf8"
 )
 
 type TokenType string
-
 const (
     Keyword TokenType = "keyword"
     Symbol TokenType = "symbol"
@@ -20,53 +17,12 @@ const (
     Identifier TokenType = "identifier"
 )
 
-var keywordMap = map[string]bool {
-    "boolean": true,
-    "char": true,
-    "class": true, 
-    "constructor": true, 
-    "do": true,
-    "else": true,
-    "false": true,
-    "field": true, 
-    "function": true, 
-    "if": true,
-    "int": true, 
-    "let": true,
-    "method": true, 
-    "null": true,
-    "return": true,
-    "static": true, 
-    "this": true,
-    "true": true,
-    "var": true, 
-    "void": true,
-    "while": true,
+type TokenObject struct {
+    tokenType TokenType
+    token string
 }
 
-var symbolMap = map[string]bool {
-    "{": true,
-    "}": true,
-    "(": true,
-    ")": true,
-    "[": true,
-    "]": true,
-    ".": true,
-    ",": true,
-    ";": true,
-    "+": true,
-    "_": true,
-    "*": true,
-    "/": true,
-    "&": true,
-    "|": true,
-    "<": true,
-    ">": true,
-    "=": true,
-    "-": true,
-}
-
-
+var tokenList []TokenObject
 
 func check(e error) {
     if e != nil {
@@ -88,18 +44,23 @@ func getSourceAsString(filePath string) string {
 func readTokens(sourceString string) {
     var s scanner.Scanner;
     s.Init(strings.NewReader(sourceString))
+    compilationEngine := new(CompilationEngine)
+
     for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
         text := s.TokenText()
-        fmt.Printf("%s: %s\n", getTokenType(text), text)
+        tokenType := getTokenType(text)
+        t := TokenObject{tokenType: tokenType, token: text}
+        tokenList = append(tokenList, t)
     }
-    fmt.Printf("\n")
+
+    compilationEngine.Compile(tokenList)
 }
 
 func getTokenType(token string) TokenType {
-    if keywordMap[token] {
-        return Keyword;
-    } else if symbolMap[token] {
-        return Symbol;
+    if KeywordMap[token] {
+        return Keyword
+    } else if SymbolMap[token] {
+        return Symbol
     } else if isInteger(token) {
         return IntegerConstant
     } else if isString(token) {
