@@ -12,3 +12,6 @@
 *.out
 
 dev/*
+
+# Default executable
+main
