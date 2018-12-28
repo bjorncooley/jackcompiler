@@ -22,14 +22,17 @@ var tokenIndex int = 0
 
 func (engine *CompilationEngine) Compile(tokenList []TokenObject) {
     for tokenIndex < len(tokenList) {
-        tokenObject := tokenList[tokenIndex]
-        switch(tokenObject.tokenType) {
-        case Keyword:
-            compileKeyword(tokenObject)
-        default:
-            compileStatement(tokenObject)
-        }
+        parseTokenObject(tokenList[tokenIndex])
         tokenIndex += 1
+    }
+}
+
+func parseTokenObject(tokenObject TokenObject) {
+    switch(tokenObject.tokenType) {
+    case Keyword:
+        compileKeyword(tokenObject)
+    default:
+        compileStatement(tokenObject)
     }
 }
 
@@ -42,11 +45,11 @@ func compileKeyword(tokenObject TokenObject) {
     } else if (token == "function") {
         checkAllowedState(CompilingFunction, token)
         compilerState = append(compilerState, CompilingFunction)
-        compileFunction()
+        compileFunction(tokenObject)
     } else if (token == "method") {
         checkAllowedState(CompilingMethod, token)
         compilerState = append(compilerState, CompilingMethod)
-        compileMethod()
+        compileMethod(tokenObject)
     }
 }
 
@@ -61,6 +64,11 @@ func compileClass(tokenObject TokenObject) {
     tokenObject = advanceToNextToken()
     checkValidToken(tokenObject, Symbol)
     output(fmt.Sprintf("<symbol>%s</symbol>", tokenObject.token))
+
+    tokenObject = advanceToNextToken()
+    parseTokenObject(tokenObject)
+
+    output("</class>")
 }
 
 func checkValidToken(tokenObject TokenObject, expected TokenType) {
@@ -78,12 +86,55 @@ func compileStatement(tokenObject TokenObject) {
     fmt.Printf("compiling statement with %s\n", tokenObject.token)
 }
 
-func compileFunction() {
+func compileFunction(tokenObject TokenObject) {
     fmt.Printf("compiling function\n")
 }
 
-func compileMethod() {
-    fmt.Printf("compiling method\n")
+func compileMethod(tokenObject TokenObject) {
+    checkValidToken(tokenObject, Keyword)
+    output("<subroutineDec>")
+
+    tokenObject = advanceToNextToken()
+    checkValidToken(tokenObject, Identifier)
+    output(fmt.Sprintf("<identifier>%s</identifier>", tokenObject.token))
+
+    tokenObject = advanceToNextToken()
+    checkValidToken(tokenObject, Identifier)
+    output(fmt.Sprintf("<identifier>%s</identifier>", tokenObject.token))
+
+    tokenObject = advanceToNextToken()
+    checkValidToken(tokenObject, Symbol)
+    output(fmt.Sprintf("<symbol>%s</symbol>", tokenObject.token))
+    output("<parameterList>")
+
+    tokenObject = advanceToNextToken()
+    compileParameterList(tokenObject)
+
+    output("</parameterList>")
+
+    output("</subroutineDec>")
+}
+
+func compileParameterList(tokenObject TokenObject) {
+    expectedType := Keyword
+    outputTag := "keyword"
+    for tokenObject.token != ")" {
+        if tokenObject.token == "," {
+            tokenObject = advanceToNextToken()
+            continue
+        }
+        checkValidToken(tokenObject, expectedType)
+        output(fmt.Sprintf("<%s>%s</%s>", outputTag, tokenObject.token, outputTag))
+        tokenObject = advanceToNextToken()
+
+        if expectedType == Keyword {
+            expectedType = Identifier
+            outputTag = "identifier"
+        } else {
+            expectedType = Keyword
+            outputTag = "keyword"
+        }
+    }
 }
 
 // Utils
