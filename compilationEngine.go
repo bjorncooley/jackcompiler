@@ -73,7 +73,7 @@ func compileClass(tokenObject TokenObject) {
 
 func checkValidToken(tokenObject TokenObject, expected TokenType) {
     if tokenObject.tokenType != expected {
-        log.Fatal(fmt.Sprintf("Invalid syntax: %s. Expected symbol of type %s", tokenObject.token, expected))
+        log.Fatal(fmt.Sprintf("Syntax error: unexpected %s, expected symbol of type %s", tokenObject.token, expected))
     }
 }
 
@@ -119,13 +119,13 @@ func compileParameterList(tokenObject TokenObject) {
     expectedType := Keyword
     outputTag := "keyword"
     for tokenObject.token != ")" {
-        if tokenObject.token == "," {
-            tokenObject = advanceToNextToken()
-            continue
-        }
+
         checkValidToken(tokenObject, expectedType)
         output(fmt.Sprintf("<%s>%s</%s>", outputTag, tokenObject.token, outputTag))
-        tokenObject = advanceToNextToken()
+
+        if expectedType == Identifier {
+            checkValidParameterListSyntax()
+        }
 
         if expectedType == Keyword {
             expectedType = Identifier
@@ -134,7 +134,26 @@ func compileParameterList(tokenObject TokenObject) {
             expectedType = Keyword
             outputTag = "keyword"
         }
+
+        tokenObject = advanceToNextToken()
     }
+}
+
+func checkValidParameterListSyntax() {
+    nextToken := tokenList[tokenIndex+1].token
+    if nextToken == ")" {
+        return
+    }
+
+    if tokenList[tokenIndex+2].tokenType == Identifier && nextToken != "," {
+        log.Fatal(fmt.Sprintf("Syntax error: unexpected %s, expected ,", nextToken))
+    }
+
+    if tokenList[tokenIndex+2].tokenType != Keyword && nextToken == "," {
+        log.Fatal("Syntax error: unexpected ,")
+    }
+
+    advanceToNextToken()
 }
 
 // Utils
