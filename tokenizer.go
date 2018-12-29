@@ -17,12 +17,12 @@ const (
     Identifier TokenType = "identifier"
 )
 
-type TokenObject struct {
+type Token struct {
     tokenType TokenType
-    token string
+    lexeme string
 }
 
-var tokenList []TokenObject
+var tokenList []Token
 
 func check(e error) {
     if e != nil {
@@ -49,7 +49,7 @@ func readTokens(sourceString string) {
     for tok := s.Scan(); tok != scanner.EOF; tok = s.Scan() {
         text := s.TokenText()
         tokenType := getTokenType(text)
-        t := TokenObject{tokenType: tokenType, token: text}
+        t := Token{tokenType: tokenType, lexeme: text}
         tokenList = append(tokenList, t)
     }
 
