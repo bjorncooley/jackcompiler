@@ -82,10 +82,6 @@ func advanceToNextToken() TokenObject {
     return tokenList[tokenIndex]
 }
 
-func compileStatement(tokenObject TokenObject) {
-    fmt.Printf("compiling statement with %s\n", tokenObject.token)
-}
-
 func compileFunction(tokenObject TokenObject) {
     fmt.Printf("compiling function\n")
 }
@@ -109,10 +105,77 @@ func compileMethod(tokenObject TokenObject) {
 
     tokenObject = advanceToNextToken()
     compileParameterList(tokenObject)
-
     output("</parameterList>")
 
+    tokenObject = advanceToNextToken()
+    checkValidToken(tokenObject, Symbol)
+    output(fmt.Sprintf("<symbol>%s</symbol>", tokenObject.token))
+
+    advanceToNextToken()
+    for tokenList[tokenIndex].token != "}" {
+        compileStatement(tokenList[tokenIndex])
+    }
+
     output("</subroutineDec>")
+}
+
+func compileStatement(tokenObject TokenObject) {
+    if tokenObject.token == "var" {
+        output("<varDec>")
+        compileVarStatement()
+        output("</varDec>")
+    }
+    fmt.Printf("compiling statement with %s\n", tokenObject.token)
+    advanceToNextToken()
+}
+
+func compileVarStatement() {
+    output("<keyword>var</keyword>")
+
+    expectedType := Keyword
+    outputTag := "keyword"
+    tokenObject := advanceToNextToken()
+
+    for tokenObject.token != ";" {
+
+        checkValidToken(tokenObject, expectedType)
+        if tokenObject.token != "," {
+            output(fmt.Sprintf("<%s>%s</%s>", outputTag, tokenObject.token, outputTag))
+        }
+
+        if expectedType == Identifier {
+            checkValidVarDeclarationSyntax()
+        }
+
+        if expectedType == Keyword {
+            expectedType = Identifier
+            outputTag = "identifier"
+        } else if expectedType == Identifier {
+            expectedType = Symbol
+            outputTag = "symbol"
+        } else {
+            expectedType = Identifier
+            outputTag = "identifier"
+        }
+
+        tokenObject = advanceToNextToken()
+    }
+}
+
+func checkValidVarDeclarationSyntax() {
+    nextToken := tokenList[tokenIndex+1]
+
+    if nextToken.token == ";" {
+        return
+    }
+
+    if nextToken.token == "," && tokenList[tokenIndex+2].token == ";" {
+        log.Fatal("Syntax error: unexpected token ,")
+    }
+
+    if nextToken.tokenType == Identifier {
+        log.Fatal(fmt.Sprintf("Syntax error: unexpected %s, expected ,", nextToken.token))
+    }
 }
 
 func compileParameterList(tokenObject TokenObject) {
