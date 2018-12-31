@@ -21,7 +21,7 @@ type CompilationEngine struct {
 var tokenIndex int = 0
 
 func (engine *CompilationEngine) Compile(tokenList []Token) {
-    for tokenIndex < len(tokenList) {
+    for tokenIndex < len(tokenList) - 1 {
         parseToken(tokenList[tokenIndex])
         tokenIndex += 1
     }
@@ -68,6 +68,7 @@ func compileClass(token Token) {
     token = advanceToNextToken()
     parseToken(token)
 
+    outputToken(tokenList[tokenIndex])
     output("</class>")
 }
 
@@ -116,6 +117,7 @@ func compileMethod(token Token) {
         compileStatement(tokenList[tokenIndex])
     }
 
+    outputToken(tokenList[tokenIndex])
     output("</subroutineDec>")
 }
 
@@ -124,8 +126,15 @@ func compileStatement(token Token) {
         output("<varDec>")
         compileVarStatement()
         output("</varDec>")
+    } else if token.lexeme == "let" {
+        output("<letDec>")
+        compileLetStatement()
+        output("</letDec>")
+    } else if token.lexeme == "return" {
+        output("<returnDec>")
+        compileReturnStatement()
+        output("</returnDec>")
     }
-    fmt.Printf("compiling statement with %s\n", token.lexeme)
     advanceToNextToken()
 }
 
@@ -159,6 +168,56 @@ func compileVarStatement() {
         }
 
         token = advanceToNextToken()
+    }
+}
+
+func compileLetStatement() {
+    output("<keyword>let</keyword>")
+    
+    token := advanceToNextToken()
+    checkValidToken(token, Identifier)
+    output(fmt.Sprintf("<identifier>%s</identifier>", token.lexeme))
+
+    token = advanceToNextToken()
+    if token.lexeme != "=" {
+        log.Fatal(fmt.Sprintf("Syntax error: unexpected %s, expected =", token.lexeme))
+    }
+    output(fmt.Sprintf("<symbol>=</symbol>"))
+
+    compileExpression()
+}
+
+func compileReturnStatement() {
+    outputToken(tokenList[tokenIndex])
+
+    token := advanceToNextToken()
+    if token.lexeme != ";" {
+        log.Fatal(fmt.Sprintf("Syntax error: unexpected %s expected ;"), token.lexeme)
+    }
+}
+
+func compileExpression() {
+    token := advanceToNextToken()
+    for token.lexeme != ";" {
+        outputToken(token)
+        token = advanceToNextToken()
+    }
+}
+
+func outputToken(token Token) {
+    switch token.tokenType {
+    case Symbol:
+        output(fmt.Sprintf("<symbol>%s</symbol>", token.lexeme))
+    case Identifier:
+        output(fmt.Sprintf("<identifier>%s</identifier>", token.lexeme))
+    case IntegerConstant:
+        output(fmt.Sprintf("<integer>%s</integer>", token.lexeme))
+    case StringConstant:
+        output(fmt.Sprintf("<string>%s</string>", token.lexeme))
+    case Keyword:
+        output(fmt.Sprintf("<keyword>%s</keyword>", token.lexeme))
+    default:
+        log.Fatal("Invalid token in expression: %s", token.lexeme)
     }
 }
 
