@@ -123,22 +123,17 @@ func compileMethod(token Token) {
 
 func compileStatement(token Token) {
     if token.lexeme == "var" {
-        output("<varDec>")
         compileVarStatement()
-        output("</varDec>")
     } else if token.lexeme == "let" {
-        output("<letDec>")
         compileLetStatement()
-        output("</letDec>")
     } else if token.lexeme == "return" {
-        output("<returnDec>")
         compileReturnStatement()
-        output("</returnDec>")
     }
     advanceToNextToken()
 }
 
 func compileVarStatement() {
+    output("<varDec>")
     output("<keyword>var</keyword>")
 
     expectedType := Keyword
@@ -169,9 +164,12 @@ func compileVarStatement() {
 
         token = advanceToNextToken()
     }
+
+    output("</varDec>")
 }
 
 func compileLetStatement() {
+    output("<letDec>")
     output("<keyword>let</keyword>")
     
     token := advanceToNextToken()
@@ -185,15 +183,19 @@ func compileLetStatement() {
     output(fmt.Sprintf("<symbol>=</symbol>"))
 
     compileExpression()
+    output("</letDec>")
+
 }
 
 func compileReturnStatement() {
+    output("<returnDec>")
     outputToken(tokenList[tokenIndex])
 
     token := advanceToNextToken()
     if token.lexeme != ";" {
         log.Fatal(fmt.Sprintf("Syntax error: unexpected %s expected ;"), token.lexeme)
     }
+    output("</returnDec>")
 }
 
 func compileExpression() {
